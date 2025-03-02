@@ -29,7 +29,6 @@ const connectDB = async () => {
 connectDB();
 
 
-  
 
 
 app.get("/items/:category", async (req, res) => {
@@ -79,7 +78,7 @@ app.post("/add_stickres", async (req, res) => {
 
 
 app.get("/", (req, res) => {
-    res.send("Heldlo,qqqqqq Node.js!");
+    res.send("Hel Node.js!");
 });
 
 app.listen(PORT, () => {
