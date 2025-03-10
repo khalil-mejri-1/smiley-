@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const mongoose = require('mongoose');
 
-const PORT = 3001;
+const PORT = 3002;
 const stickres = require('./models/stickres'); // Import the Naruto model
 
 
@@ -34,7 +34,7 @@ connectDB();
 app.get("/items/:category", async (req, res) => {
   const { category } = req.params; // استخراج الفئة من الرابط
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
+  const limit = parseInt(req.query.limit) || 30;
 
   try {
       const totalItems = await stickres.countDocuments({ category }); // حساب العدد حسب الفئة
@@ -49,6 +49,43 @@ app.get("/items/:category", async (req, res) => {
       res.status(500).json({ message: "Error fetching items" });
   }
 });
+
+
+app.get("/products/:category", async (req, res) => {
+  const { category } = req.params; // استخراج الفئة من الـ URL
+
+  try {
+      const items = await stickres.aggregate([
+          { $match: { category } }, // تصفية المنتجات حسب الفئة
+          { $sample: { size: 30 } } // اختيار 30 عنصرًا عشوائيًا
+      ]);
+
+      res.json({ items });
+  } catch (error) {
+      console.error("Error fetching items:", error);
+      res.status(500).json({ message: "Error fetching items" });
+  }
+});
+
+
+
+
+// app.get("/items/:category", async (req, res) => {
+//   const { category } = req.params; // Extract category from URL
+
+//   try {
+//       const items = await stickres.find({ category }) // Fetch items by category
+//           .sort({ _id: -1 }); // Sort by latest items
+
+//       res.json({ items });
+//   } catch (error) {
+//       console.error("Error fetching items:", error);
+//       res.status(500).json({ message: "Error fetching items" });
+//   }
+// });
+
+
+
 
 
 
