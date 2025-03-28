@@ -3,7 +3,8 @@ const app = express();
 const mongoose = require('mongoose');
 
 const PORT = 3002;
-const stickres = require('./models/stickres'); // Import the Naruto model
+const stickres = require("./models/stickres"); // تأكد من أن الاسم صحيح هنا
+const pack = require("./models/pack"); // تأكد من أن الاسم صحيح هنا
 
 
 app.use(express.json()); // Middleware to parse JSON requests
@@ -51,24 +52,79 @@ app.get("/items/:category", async (req, res) => {
 });
 
 
-app.get("/products/:category", async (req, res) => {
-  const { category } = req.params; // استخراج الفئة من الـ URL
+
+app.get("/pack_items/:id", async (req, res) => {
+  const { id } = req.params; // استخراج المعرف من الرابط
 
   try {
-      const items = await stickres.aggregate([
-          { $match: { category } }, // تصفية المنتجات حسب الفئة
-          { $sample: { size: 30 } } // اختيار 30 عنصرًا عشوائيًا
-      ]);
+    const item = await pack.findById(id); // البحث عن العنصر حسب المعرف
 
-      res.json({ items });
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    // استخراج جميع الصور من العنصر
+    const images = [
+      ...item.stickers.map((sticker) => sticker.image) // جميع صور الملصقات
+    ].filter(Boolean); // حذف القيم الفارغة (null أو undefined)
+
+    res.json({ images });
   } catch (error) {
-      console.error("Error fetching items:", error);
-      res.status(500).json({ message: "Error fetching items" });
+    console.error("Error fetching images:", error);
+    res.status(500).json({ message: "Error fetching images" });
   }
 });
 
 
 
+
+app.delete("/delete-all-products", async (req, res) => {
+    try {
+      await stickres.deleteMany({}); // حذف جميع المنتجات من القاعدة المحددة
+      res.json({ success: true, message: `All products deleted from ${DATABASE_NAME} successfully!` });
+    } catch (error) {
+      // طباعة التفاصيل في الـ console
+      console.error(error);
+      
+      // إرسال تفاصيل الخطأ في الاستجابة
+      res.status(500).json({ success: false, message: "Error deleting products", error: error.message });
+    }
+  });
+
+
+
+  // Route to create and save a pack
+app.post('/packs', async (req, res) => {
+  try {
+      const { title, image,category, quantity_pack, stickers } = req.body;
+
+      const newPack = new pack({
+          title,
+          image,
+          category,
+          quantity_pack,
+          stickers
+      });
+
+      const savedPack = await newPack.save();
+      res.status(201).json(savedPack);
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Route to fetch all packs
+app.get('/packs', async (req, res) => {
+  try {
+      const packs = await pack.find();
+      res.status(200).json(packs);
+  } catch (error) {
+      res.status(500).json({ error: error.message });
+  }
+});
+
+  
 
 // app.get("/items/:category", async (req, res) => {
 //   const { category } = req.params; // Extract category from URL
@@ -115,7 +171,7 @@ app.post("/add_stickres", async (req, res) => {
 
 
 app.get("/", (req, res) => {
-    res.send("Hel Node.js!");
+    res.send("update 2/28/2025");
 });
 
 app.listen(PORT, () => {
